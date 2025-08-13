@@ -1,70 +1,87 @@
 # Django EOSE
 
 **Django Encrypted Object Search Engine**  
-Efficient parallel search for encrypted or derived fields in Django querysets, with smart batching and caching.
+An efficient search engine for encrypted or derived fields in Django querysets, with support for parallel processing, smart batching, and result caching.
 
-## Features
+`django-eose` is ideal for scenarios where you need to search data that is encrypted in the database or derived from other fields, providing high performance even on large datasets.
 
-- Parallel search using processes, threads, or sync mode.
-- Batch size adapts to available memory.
-- Supports searching across related fields (e.g., `order__client`).
-- Caches search results for fast repeated queries.
-- Optimized for large datasets and encrypted fields.
+---
+
+## Key Features
+
+- **Parallel Search:** supports execution using processes, threads, or synchronous mode.  
+- **Smart Batching:** batch size automatically adapts to available memory.  
+- **Related Field Search:** search can be performed on fields of related objects, e.g., `order__client`.  
+- **Result Caching:** frequently searched results are cached for faster repeated queries.  
+- **Optimized for Large Datasets:** particularly useful for large datasets and encrypted fields.
+
+---
 
 ## Installation
 
-```sh
+Install easily via `pip`:
+
+```bash
 pip install django-eose
 ```
 
-Or add to your requirements.txt:
-```sh
-django-eose
-```
 ## Requirements
 
-- Python 3.10+
+- Python 3.10 or higher
 - Django 5.2.5
 - sqlparse==0.5.3
 - asgiref==3.9.1
 - psutil==7.0.0
 
-## Model configuration
+## Model Configuration
 
-Example of model configuration with fields encrypted with Fernet:
+To use django-eose, your encrypted fields must provide Getters so the package can access the decrypted data.
+
+Example model using Fernet encryption:
+
 ```python
-class Client(models.Model):
-    _encrypted_name = model.BinaryField()
-    _encrypted_email = model.BinaryField()
+from django.db import models
+from cryptography.fernet import Fernet
 
+AES_KEY = b"<your_key_here>"
+
+class Client(models.Model):
+    _encrypted_name = models.BinaryField()
+    _encrypted_email = models.BinaryField()
+
+    # Method to decrypt
     def _decrypt_field(self, encrypted_value):
         return Fernet(AES_KEY).decrypt(encrypted_value).decode()
 
+    # Method to encrypt
     def _encrypt_field(self, value):
         return Fernet(AES_KEY).encrypt(value.encode())
     
+    # Creates properties that handle encryption/decryption
     @staticmethod
     def _property(field_name):
-        # Getter decrypts the field value before returning it.
         def getter(self):
             return self._decrypt_field(getattr(self, field_name))
         
-        # Setter encrypts the value before setting it to the field.
         def setter(self, value):
             setattr(self, field_name, self._encrypt_field(value))
 
         return property(getter, setter)
     
+    # Fields accessible as normal attributes
     name = _property('_encrypted_name')
     email = _property('_encrypted_email')
+
 ```
+⚠️ You interact with name and email like regular fields, while encryption/decryption happens transparently.
 
 ## Usage
 
-Import and use search_queryset:
+Import the search_queryset function and perform searches:
 
 ```python
 from django_eose import search_queryset
+from orders.models import OrderItem
 
 # Example: search for "john" in related client fields
 results = search_queryset(
@@ -72,30 +89,32 @@ results = search_queryset(
     queryset=OrderItem.objects.all(),
     related_field="order__client",
     fields=("name", "email"),
-    only_fields=("_encrypted_name", "_encrypted_email")
-    executor="processes"
+    only_fields=("_encrypted_name", "_encrypted_email"),
+    executor="processes",
+    max_batch_size=1_000_000
 )
 ```
 
-## Parameters
+## `search_queryset` Parameters
 
-- search: Search term (case-insensitive).
-- queryset: Django queryset to search.
-- related_field: Dotted path to related object (e.g., "order__client").
-- fields: Tuple of fields to inspect on the related object.
-- only_fields: Fields to load with .only(...) for optimization (optional).
+- search: search term (case-insensitive).
+- queryset: Django queryset to search in.
+- related_field: path to a related object using __ notation.
+- fields: fields of the related object to inspect.
+- only_fields: fields to load with .only() for optimization (optional).
 - executor: "processes", "threads", or "sync" (default: "processes").
-- cache_timeout: Cache duration in seconds (default: 600).
-- imap_chunksize: Chunk size per worker (default: 10240).
-- memory_fraction: Fraction of available memory for batching (default: 0.60).
-- avg_obj_size_bytes: Estimated average object size in bytes (optional).
-- max_workers: Number of parallel workers (optional).
+- cache_timeout: cache duration in seconds (default: 600).
+- imap_chunksize: chunk size per worker (default: 10240).
+- memory_fraction: fraction of available memory for batching (default: 0.60).
+- avg_obj_size_bytes: estimated average object size in bytes (optional).
+- max_workers: maximum number of parallel workers (optional).
+- max_batch_size: maximum number of objects per batch.
 
-See search_queryset for full details.
+Refer to `search_queryset` for full parameter details.
 
-## Settings
+## Default Settings
 
-Default settings are defined in django_eose/settings.py:
+`django-eose` defines default settings in `django_eose/settings.py`:
 
 - MEMORY_FRACTION
 - IMAP_CHUNKSIZE
@@ -105,7 +124,8 @@ Default settings are defined in django_eose/settings.py:
 - MIN_BATCH_SIZE
 - MAX_BATCH_SIZE
 
-License
+## License
+
 MIT © 2025 Paulo Otávio Castoldi
 
 ## Links
