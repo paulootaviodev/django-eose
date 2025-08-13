@@ -3,7 +3,7 @@ from multiprocessing import get_context, cpu_count
 from typing import Iterable, Callable
 import sys
 
-def run_sync(iterable: Iterable, func: Callable, chunksize: int):
+def run_sync(iterable: Iterable, func: Callable):
     for item in iterable:
         yield func(item)
 
@@ -34,4 +34,4 @@ def get_executor(mode: str):
         return run_threads
     if mode == "sync":
         return run_sync
-    raise ValueError(f"Executor inválido: {mode}")
+    raise ValueError(f"Invalid executor: {mode}")
