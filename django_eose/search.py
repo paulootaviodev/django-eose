@@ -18,7 +18,8 @@ from .utils import build_proc_qs, resolve_related_field, make_cache_key
 def _estimate_avg_obj_size(sample, fallback: int) -> int:
     # getsizeof underestimates Django objects; we use a simple multiplier and fallback
     try:
-        size = sys.getsizeof(sample) or fallback
+        sample = sample[:10]
+        size = sys.getsizeof(sample) / len(sample) or fallback
         return int(size * 1.2)
     except Exception:
         return fallback
@@ -108,9 +109,7 @@ def search_queryset(
     proc_qs = build_proc_qs(queryset, related_field, only_fields)
 
     # Sample to estimate size
-    sample_obj = resolve_related_field(proc_qs.first(), related_field)
-    
-    avg_size = avg_obj_size_bytes or _estimate_avg_obj_size(sample_obj, DEFAULTS.AVG_OBJ_SIZE_FALLBACK)
+    avg_size = avg_obj_size_bytes or _estimate_avg_obj_size(proc_qs, DEFAULTS.AVG_OBJ_SIZE_FALLBACK)
     batch_size = _compute_batch_size(available_bytes, avg_size)
 
     # Batch iteration
