@@ -29,12 +29,12 @@ def _estimate_avg_obj_size(sample, fallback: int) -> int:
     except Exception:
         return fallback
 
-def _compute_batch_size(available_bytes: int, avg_obj_size: int) -> int:
+def _compute_batch_size(available_bytes: int, avg_obj_size: int, max_batch_size: int) -> int:
     if avg_obj_size <= 0:
         return DEFAULTS.MIN_BATCH_SIZE
     batch = int(available_bytes // avg_obj_size)
     batch = max(batch, DEFAULTS.MIN_BATCH_SIZE)
-    batch = min(batch, DEFAULTS.MAX_BATCH_SIZE)
+    batch = min(batch, max_batch_size or DEFAULTS.MAX_BATCH_SIZE)
     return batch
 
 def _process_obj(obj, *, search: str, related_field: str | None, fields: tuple[str, ...]):
@@ -71,6 +71,7 @@ def search_queryset(
     memory_fraction: float = DEFAULTS.MEMORY_FRACTION,
     avg_obj_size_bytes: int | None = None,
     max_workers: int | None = None,
+    max_batch_size: int = None
 ):
     """
     Parallel search over a queryset, checking if `search` (lowercase) appears in the `fields`.
@@ -84,6 +85,7 @@ def search_queryset(
     - memory_fraction: fraction of memory available for batch sizing.
     - avg_obj_size_bytes: estimated average size per object; if None, it will be inferred with fallback.
     - max_workers: number of workers; if None, use cpu_count().
+    - max_batch_size: number of objects per batch.
     """
     if not search:
         return queryset.none()
@@ -115,7 +117,7 @@ def search_queryset(
 
     # Sample to estimate size
     avg_size = avg_obj_size_bytes or _estimate_avg_obj_size(proc_qs, DEFAULTS.AVG_OBJ_SIZE_FALLBACK)
-    batch_size = _compute_batch_size(available_bytes, avg_size)
+    batch_size = _compute_batch_size(available_bytes, avg_size, max_batch_size=max_batch_size)
 
     # Batch iteration
     total = queryset.count()

@@ -1,4 +1,4 @@
 from .search import search_queryset
 
 __all__ = ["search_queryset"]
-__version__ = "0.1.2b1"
+__version__ = "0.2.2b1"

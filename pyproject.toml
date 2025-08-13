@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-eose"
-version = "0.1.2b1"
+version = "0.2.2b1"
 description = "Django Encrypted Object Search Engine."
 readme = "README.md"
 requires-python = ">=3.10"
