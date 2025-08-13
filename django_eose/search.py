@@ -1,5 +1,6 @@
 from functools import partial
 from multiprocessing import cpu_count
+import pickle
 import sys
 
 from django.core.cache import cache
@@ -17,10 +18,14 @@ from .utils import build_proc_qs, resolve_related_field, make_cache_key
 
 def _estimate_avg_obj_size(sample, fallback: int) -> int:
     # getsizeof underestimates Django objects; we use a simple multiplier and fallback
+    sample_size = 10
+    safety_margin = 1.5
+
     try:
-        sample = sample[:10]
-        size = sys.getsizeof(sample) / len(sample) or fallback
-        return int(size * 1.2)
+        objs = list(sample[:sample_size])
+        total_size = sum(sys.getsizeof(pickle.dumps(o, protocol=pickle.HIGHEST_PROTOCOL)) for o in objs)
+        avg_size = total_size / len(objs)
+        return int(avg_size * safety_margin)
     except Exception:
         return fallback
 
