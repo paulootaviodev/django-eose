@@ -17,7 +17,9 @@ from .utils import build_proc_qs, resolve_related_field, make_cache_key
 
 
 def _estimate_avg_obj_size(sample, fallback: int) -> int:
-    # getsizeof underestimates Django objects; we use a simple multiplier and fallback
+    """
+    Returns the average object size in bytes based on an average of 10 samples + a 50% safety margin.
+    """
     sample_size = 10
     safety_margin = 1.5
 
@@ -30,6 +32,9 @@ def _estimate_avg_obj_size(sample, fallback: int) -> int:
         return fallback
 
 def _compute_batch_size(available_bytes: int, avg_obj_size: int, max_batch_size: int) -> int:
+    """
+    Calculate the batch size based on the available memory and the size of each object.
+    """
     if avg_obj_size <= 0:
         return DEFAULTS.MIN_BATCH_SIZE
     batch = int(available_bytes // avg_obj_size)
@@ -56,7 +61,6 @@ def _process_obj(obj, *, search: str, related_field: str | None, fields: tuple[s
     except Exception:
         pass
     return None
-
 
 def search_queryset(
     search: str,
@@ -124,13 +128,16 @@ def search_queryset(
     matched_ids: set[int] = set()
 
     run = get_executor(executor)
-    total_chunk = imap_chunksize * (max_workers or cpu_count())
+    max_workers = max_workers or cpu_count()
+    total_chunk = imap_chunksize * max_workers
 
     func = partial(_process_obj, search=search_lc, related_field=related_field, fields=tuple(fields))
 
     # Traverse the queryset in batches and parallelize per item
     for start in range(0, total, batch_size):
-        batch_iter = proc_qs.all()[start:start + batch_size].iterator(chunk_size=total_chunk)
+        batch_qs = proc_qs[start:start + batch_size]
+        batch_iter = batch_qs.iterator(chunk_size=total_chunk)
+        
         for result in run(batch_iter, func, chunksize=imap_chunksize, max_workers=max_workers):
             if result:
                 matched_ids.add(result)
