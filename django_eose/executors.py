@@ -3,15 +3,25 @@ from multiprocessing import get_context, cpu_count
 from typing import Iterable, Callable
 import sys
 
-def run_sync(iterable: Iterable, func: Callable):
+def run_sync(iterable: Iterable, func: Callable, chunksize: int, max_workers: int | None = None):
     for item in iterable:
         yield func(item)
 
 def run_threads(iterable: Iterable, func: Callable, chunksize: int, max_workers: int | None = None):
-    max_workers = max_workers or cpu_count()
+    def chunk_generator(iterable, chunksize):
+        chunk = []
+        for item in iterable:
+            chunk.append(item)
+            if len(chunk) == chunksize:
+                yield chunk
+                chunk = []
+        if chunk:
+            yield chunk
+
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
-        for result in ex.map(func, iterable, chunksize=chunksize):
-            yield result
+        for chunk in chunk_generator(iterable, chunksize):
+            for result in ex.map(func, chunk):
+                yield result
 
 def run_processes(iterable: Iterable, func: Callable, chunksize: int, max_workers: int | None = None):
     if sys.platform.startswith("linux"):
@@ -22,7 +32,6 @@ def run_processes(iterable: Iterable, func: Callable, chunksize: int, max_worker
         start_method = "spawn"
 
     ctx = get_context(start_method)
-    max_workers = max_workers or cpu_count()
     with ctx.Pool(processes=max_workers) as pool:
         for result in pool.imap_unordered(func, iterable, chunksize=chunksize):
             yield result
