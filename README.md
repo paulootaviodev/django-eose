@@ -80,6 +80,11 @@ class Client(models.Model):
 
 ## Usage
 
+Add AES_PASSWORD to your .env file:
+```bash
+AES_PASSWORD=your-password-here
+```
+
 To decrypt data in django-eose and speed up the process, use:
 
 ```python
