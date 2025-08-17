@@ -12,7 +12,7 @@ license = { text = "MIT" }
 authors = [{ name = "Paulo Otávio Castoldi", email = "paulootavio343@outlook.com" }]
 keywords = ["django", "search", "multiprocessing", "decrypted", "cache"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Framework :: Django",
   "Framework :: Django :: 5",
