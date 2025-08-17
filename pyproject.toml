@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-eose"
-version = "0.2.3b1"
+version = "0.3.0"
 description = "Django Encrypted Object Search Engine."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,7 +25,10 @@ dependencies = [
   "Django==5.2.5",
   "sqlparse==0.5.3",
   "asgiref==3.9.1",
-  "psutil==7.0.0"
+  "psutil==7.0.0",
+  "cffi"==1.17.1
+  "cryptography"==45.0.6
+  "pycparser"==2.22
 ]
 
 [project.optional-dependencies]
