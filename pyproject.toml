@@ -26,8 +26,8 @@ dependencies = [
   "sqlparse==0.5.3",
   "asgiref==3.9.1",
   "psutil==7.0.0",
-  "cffi"==1.17.1
-  "cryptography"==45.0.6
+  "cffi"==1.17.1,
+  "cryptography"==45.0.6,
   "pycparser"==2.22
 ]
 
