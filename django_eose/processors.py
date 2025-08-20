@@ -4,18 +4,20 @@ import base64
 import hashlib
 
 from cryptography.fernet import Fernet, InvalidToken
-from .utils import resolve_related_field
+from typing import Any
+from .utils import resolve_related_field, normalize_text
 
 try:
     AES_PASSWORD = getenv("AES_PASSWORD")
-    if AES_PASSWORD is None:
-        raise ValueError("AES_PASSWORD not found in environment variables.")
-    AES_KEY = base64.urlsafe_b64encode(hashlib.sha256(AES_PASSWORD.encode()).digest())
+    if AES_PASSWORD is not None:
+        AES_KEY = base64.urlsafe_b64encode(hashlib.sha256(AES_PASSWORD.encode()).digest())
+    else:
+        AES_KEY = None
 except Exception as e:
     raise RuntimeError(f"Failed to generate AES key: {e}")
 
 def process_obj(
-        obj,
+        obj: Any,
         *,
         search: str,
         related_field: str | None,
@@ -31,7 +33,7 @@ def process_obj(
         for field in fields:
             values.add(getattr(client_obj, field, None))
             
-        if any(search in str(value).lower() for value in values):
+        if any(search in normalize_text(str(value)) for value in values):
             return obj.pk
     except Exception as e:
         raise RuntimeError(f"Failed to process object: {e}")
@@ -44,6 +46,9 @@ def process_values(
     """
     Return the id of the object referring to the values.
     """
+    if AES_KEY == None:
+        raise ValueError("AES_PASSWORD not found in environment variables.")
+    
     decrypted_values: list[str, int] = list()
 
     for encrypted_value in encrypted_values_list:
@@ -56,5 +61,5 @@ def process_values(
             raise Exception(f"Error decrypting data: {e}")
 
     for value in decrypted_values:
-        if search in str(value).lower():
+        if search in normalize_text(str(value)):
             return decrypted_values[0] # obj.pk
