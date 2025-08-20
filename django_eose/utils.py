@@ -2,6 +2,8 @@ from .settings import DEFAULTS
 from typing import Any
 import pickle
 import sys
+import unicodedata
+import re
 
 def build_proc_qs(
     qs,
@@ -92,3 +94,12 @@ def compute_batch_size(available_bytes: int, avg_obj_size: int, max_batch_size: 
     batch = max(batch, DEFAULTS.MIN_BATCH_SIZE)
     batch = min(batch, max_batch_size or DEFAULTS.MAX_BATCH_SIZE)
     return batch
+
+def normalize_text(text: str) -> str:
+    # remove accents
+    text = unicodedata.normalize("NFD", text)
+    text = text.encode("ascii", "ignore").decode("utf-8")
+    # remove punctuation and special characters
+    text = re.sub(r"[^\w\s]", "", text)
+    # lowercase
+    return text.lower()

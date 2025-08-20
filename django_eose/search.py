@@ -8,13 +8,18 @@ from django.utils.text import slugify
 
 from .executors import get_executor
 from .settings import DEFAULTS
-from .utils import build_proc_qs, make_cache_key
-from .utils import estimate_avg_obj_size, compute_batch_size
 from .processors import process_obj, process_values
+from .utils import (
+    build_proc_qs,
+    make_cache_key,
+    estimate_avg_obj_size,
+    compute_batch_size,
+    normalize_text
+)
 
 def search_queryset(
     search: str,
-    queryset,
+    queryset: Any,
     *,
     related_field: str | None = None,
     fields: tuple[str] | None = None,
@@ -47,13 +52,13 @@ def search_queryset(
     if not search:
         return queryset.none()
 
-    search_lc = search.lower()
+    search = normalize_text(search)
 
     # Sign the queryset for the cache key
     model = queryset.model
     model_label = f"{model._meta.app_label}.{model._meta.model_name}"
     qs_signature = str(queryset.query)
-    cache_key = make_cache_key(model_label, qs_signature, slugify(search_lc), tuple(fields), related_field)
+    cache_key = make_cache_key(model_label, qs_signature, slugify(search), tuple(fields), related_field)
 
     cached_ids = cache.get(cache_key)
     if cached_ids:
@@ -86,7 +91,7 @@ def search_queryset(
 
     func = partial(
         process_values if decrypt else process_obj,
-        search=search_lc,
+        search=search,
         related_field=related_field,
         fields=tuple(fields)
     )
