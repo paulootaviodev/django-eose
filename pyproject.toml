@@ -1,10 +1,10 @@
 [build-system]
-requires = ["setuptools>=78.1.1", "wheel>=0.45.1"]
+requires = ["setuptools>=80.9.0", "wheel>=0.45.1"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "django-eose"
-version = "0.3.1"
+version = "0.3.2"
 description = "Django Encrypted Object Search Engine."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,17 +22,17 @@ classifiers = [
 ]
 
 dependencies = [
-  "Django==5.2.5",
-  "sqlparse==0.5.3",
-  "asgiref==3.9.1",
-  "psutil==7.0.0",
-  "cffi==1.17.1",
-  "cryptography==45.0.6",
-  "pycparser==2.22"
+  "Django>=5.2.6",
+  "sqlparse>=0.5.3",
+  "asgiref>=3.9.1",
+  "psutil>=7.0.0",
+  "cffi>=2.0.0",
+  "cryptography>=45.0.7",
+  "pycparser>=2.23"
 ]
 
 [project.optional-dependencies]
-dev = ["setuptools>=78.1.1", "wheel>=0.45.1"]
+dev = ["setuptools>=80.9.0", "wheel>=0.45.1"]
 
 [project.urls]
 Homepage = "https://github.com/paulootaviodev/django-eose"
